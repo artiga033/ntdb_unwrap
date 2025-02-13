@@ -1,0 +1,14 @@
+[package]
+name = "sqlite_extension"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[lib]
+name = "sqlite_ext_ntqq_db"
+crate-type = ["rlib", "cdylib"]
+[dependencies]
+libsqlite3-sys = { version = "=0.31.0" }
+
+[features]
+_cdylib = ["libsqlite3-sys/loadable_extension"]

@@ -1,0 +1,19 @@
+[package]
+name = "ntdb_unwrap"
+version = "0.1.0"
+edition = "2021"
+license = "MIT"
+
+[workspace]
+
+[dependencies]
+clap = { version = "4.5.28", features = ["cargo"] }
+hex = "0.4.3"
+md-5 = "=0.10.6"
+rusqlite = { version = "0.33.0", features = [
+    "bundled-sqlcipher-vendored-openssl",
+] }
+snafu = "0.8.5"
+
+[dependencies.sqlite_extension]
+path = "sqlite_extension"
