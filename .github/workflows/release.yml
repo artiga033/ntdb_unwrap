@@ -1,0 +1,88 @@
+name: Release
+
+on:
+  push:
+    tags: ['v*']
+
+env:
+  CARGO_TERM_COLOR: always
+  APP_NAME: ntdb_unwrap
+
+jobs:
+  build:
+    runs-on: ${{ matrix.config.os }}
+    strategy:
+      matrix: 
+        config:
+          - os: windows-latest
+            target: x86_64-pc-windows-msvc
+            test: true
+            output_extension: .exe
+          - os: windows-latest
+            target: aarch64-pc-windows-msvc
+            test: false
+            output_extension: .exe
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            test: true
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-musl
+            test: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-gnu
+            test: true
+          - os: ubuntu-latest
+            target: aarch64-unknown-linux-musl
+            test: true
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Install musl tools (for musl target)
+      if: ${{ endsWith(matrix.config.target, '-musl') }}
+      run: sudo apt-get update && sudo apt-get install -y musl-tools
+    - name: Caching
+      uses: Swatinem/rust-cache@v2
+
+    - name: Build
+      uses: houseabsolute/actions-rust-cross@v0
+      with:
+        command: build
+        target: ${{ matrix.config.target }}
+        args: --release --target ${{ matrix.config.target }} --locked --verbose
+        strip: true
+
+    - name: Archive (Linux)
+      if: ${{ runner.os == 'Linux' }}
+      run: zip -j ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}-${{ matrix.config.target }}.zip ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}${{ matrix.config.output_extension }}
+    - name: Archive (Windows)
+      if: ${{ runner.os == 'Windows' }}
+      run: Compress-Archive -DestinationPath ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}-${{ matrix.config.target }}.zip -Path ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}${{ matrix.config.output_extension }} 
+
+    - name: Upload artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: ${{ env.APP_NAME}}-${{ matrix.config.target }}
+        path: ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}-${{ matrix.config.target }}.zip
+  
+  release:
+    permissions:
+      contents: write
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          merge-multiple: true
+      - name: Resolve release files
+        id: reslove-release-files
+        run: |
+          echo 'release_files<<EOF' >> $GITHUB_OUTPUT
+          realpath *.zip >> $GITHUB_OUTPUT
+          echo 'EOF' >> $GITHUB_OUTPUT
+      - name: Release
+        uses: softprops/action-gh-release@v2
+        with:
+          prerelease: ${{contains(github.ref, '-')}}
+          files: ${{steps.reslove-release-files.outputs.release_files}}

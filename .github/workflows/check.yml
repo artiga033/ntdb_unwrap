@@ -1,0 +1,25 @@
+name: Check
+on: 
+  push:
+    branches: ["main"]
+    tags-ignore: ['v*'] # Ignore tags as they'll trigger the build process
+  pull_request: 
+    branches: ["main"]
+
+# Make sure CI fails on all warnings, including Clippy lints
+env:
+    RUSTFLAGS: "-Dwarnings"
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        submodules: true
+    - name: Check
+      run: cargo check --workspace
+    - name: Clippy check
+      run: cargo clippy --workspace
+    - name: test
+      run: cargo test --workspace
