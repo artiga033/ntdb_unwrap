@@ -38,6 +38,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    - name: Install Protoc
+      uses: actions-gw/setup-protoc-to-env@v3
     - name: Install musl tools (for musl target)
       if: ${{ endsWith(matrix.config.target, '-musl') }}
       run: sudo apt-get update && sudo apt-get install -y musl-tools

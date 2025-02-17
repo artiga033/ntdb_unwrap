@@ -17,6 +17,8 @@ jobs:
     - uses: actions/checkout@v4
       with:
         submodules: true
+    - name: Install Protoc
+      uses: actions-gw/setup-protoc-to-env@v3
     - name: Check
       run: cargo check --workspace
     - name: Clippy check
