@@ -3,7 +3,9 @@ name = "ntdb_unwrap"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"
-
+description = "Decrypt/decoded NTQQ database files."
+homepage = "https://github.com/artiga033/ntdb_unwrap"
+repository = "https://github.com/artiga033/ntdb_unwrap"
 [workspace]
 
 [dependencies]
