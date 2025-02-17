@@ -1,3 +1,6 @@
+mod model;
+pub use model::*;
+
 use std::path::Path;
 
 pub use sqlite_ext_ntqq_db::*;

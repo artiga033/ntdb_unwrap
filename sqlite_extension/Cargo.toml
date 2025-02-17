@@ -1,5 +1,5 @@
 [package]
-name = "sqlite_extension"
+name = "sqlite_ext_ntqq_db"
 version = "0.1.0"
 edition = "2021"
 license = "MIT"

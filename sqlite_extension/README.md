@@ -62,5 +62,5 @@ cargo build --features _cdylib
 如果要在 workspace 目录下构建，必须指定`package`：
 
 ```sh
-cargo build -p sqlite_extension --features _cdylib
+cargo build -p sqlite_ext_ntqq_db --features _cdylib
 ```

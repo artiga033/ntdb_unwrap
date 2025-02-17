@@ -8,12 +8,19 @@ license = "MIT"
 
 [dependencies]
 clap = { version = "4.5.28", features = ["cargo"] }
+derive_more = { version = "2.0.1", features = ["from", "into"] }
 hex = "0.4.3"
 md-5 = "=0.10.6"
+prost = "0.13.5"
+protobuf = "3.7.1"
 rusqlite = { version = "0.33.0", features = [
     "bundled-sqlcipher-vendored-openssl",
 ] }
 snafu = "0.8.5"
 
-[dependencies.sqlite_extension]
+[dependencies.sqlite_ext_ntqq_db]
 path = "sqlite_extension"
+version = "*"
+
+[build-dependencies]
+protobuf-codegen = "3.7.1"

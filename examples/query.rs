@@ -1,0 +1,40 @@
+use ntdb_unwrap::{
+    db::{self, register_offset_vfs, try_decrypt_db, Model, OFFSET_VFS_NAME},
+    ntqq::DBDecryptInfo,
+};
+use rusqlite::{fallible_streaming_iterator::FallibleStreamingIterator, Connection};
+
+fn main() {
+    let args = std::env::args().collect::<Vec<String>>();
+    if args.len() < 3 {
+        eprintln!("Usage: {} <dbfile> [pkey]", args[0]);
+        std::process::exit(1);
+    }
+    let mut iter = args.into_iter();
+    iter.next();
+    let dbfile = iter.next().unwrap();
+    let key = iter.next().unwrap();
+
+    register_offset_vfs().expect("Failed to register offset_vfs");
+    let conn = Connection::open(format!("file:{}?vfs={}", dbfile, OFFSET_VFS_NAME))
+        .expect("Failed to open db");
+
+    try_decrypt_db(
+        &conn,
+        DBDecryptInfo {
+            key,
+            // set to None to automatically guess
+            cipher_hmac_algorithm: None,
+        },
+    )
+    .expect("Failed to decrypt db");
+
+    let mut stmt = conn
+        .prepare(
+            "SELECT * FROM group_msg_table LIMIT 10;",
+        ).expect("prepare stmt failed");
+    stmt.query([]).unwrap().for_each(|row| {
+        let m = db::GroupMsgTable::parse_row(row).expect("Failed to parse row");
+        println!("{:#?}", m);
+    }).expect("Failed to query");
+}
