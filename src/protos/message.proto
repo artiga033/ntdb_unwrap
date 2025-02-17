@@ -64,3 +64,5 @@ message SingleMessage {
 }
 
 message FeedMessage { string text = 48178; }
+
+message Empty {}

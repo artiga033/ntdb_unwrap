@@ -1,7 +1,7 @@
 pub mod db;
 pub mod ntqq;
-pub mod util;
 mod protos;
+pub mod util;
 
 use snafu::prelude::*;
 
@@ -11,7 +11,10 @@ pub enum Error {
     IO { source: std::io::Error },
     #[snafu()]
     Sqlite { source: rusqlite::Error, op: String },
-    Protobuf { source: protobuf::Error, raw: Vec<u8> },
+    Protobuf {
+        source: protobuf::Error,
+        raw: Vec<u8>,
+    },
     #[snafu(whatever, display("{message}"))]
     Whatever { message: String },
 }

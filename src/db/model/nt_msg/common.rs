@@ -2,10 +2,11 @@ use crate::{protos, ProtobufSnafu};
 use derive_more::{From, Into};
 use protobuf::Message as _;
 use rusqlite::types::FromSql;
+use serde::{Deserialize, Serialize};
 use snafu::ResultExt;
 use std::fmt;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into, Serialize, Deserialize)]
 pub struct ChatType(i64);
 impl fmt::Display for ChatType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -30,7 +31,7 @@ impl FromSql for ChatType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into, Serialize, Deserialize)]
 pub struct MessageType(i64);
 impl fmt::Display for MessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -60,7 +61,7 @@ impl FromSql for MessageType {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into, Serialize, Deserialize)]
 pub struct SubMessageType(i64);
 impl fmt::Display for SubMessageType {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
@@ -94,7 +95,7 @@ impl FromSql for SubMessageType {
         i64::column_result(value).map(SubMessageType::from)
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum SendStatus {
     Failed = 0,
     Sending = 1,
@@ -131,7 +132,7 @@ impl FromSql for SendStatus {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into, Serialize, Deserialize)]
 pub struct AtFlag(i64);
 impl AtFlag {
     pub const SOMEONE_AT_ME: i64 = 6;
@@ -149,6 +150,15 @@ impl FromSql for Message {
     fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
         let bytes = Vec::<u8>::column_result(value)?;
         Message::parse_from_bytes(&bytes)
+            .context(ProtobufSnafu { raw: bytes })
+            .map_err(|x| x.into())
+    }
+}
+pub type UnknownProtoBytes = protos::message::Empty;
+impl FromSql for UnknownProtoBytes {
+    fn column_result(value: rusqlite::types::ValueRef<'_>) -> rusqlite::types::FromSqlResult<Self> {
+        let bytes = Vec::<u8>::column_result(value)?;
+        UnknownProtoBytes::parse_from_bytes(&bytes)
             .context(ProtobufSnafu { raw: bytes })
             .map_err(|x| x.into())
     }

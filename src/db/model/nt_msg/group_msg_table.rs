@@ -1,8 +1,8 @@
-use snafu::ResultExt;
-
 use super::*;
 use crate::Result;
-#[derive(Debug, Clone)]
+use serde::{Deserialize, Serialize};
+use snafu::ResultExt;
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GroupMsgTable {
     pub id: i64,
     pub msg_random: i64,
@@ -16,34 +16,50 @@ pub struct GroupMsgTable {
     /// 不是很好用 Rust 类型表示（若enum则size得翻倍），所以不做处理了
     pub send_type: i64,
     pub sender_uid: String,
+    #[serde(rename = "40026")]
     pub _40026: i64,
     pub peer_uid: String,
     pub peer_uin: i64,
+    #[serde(rename = "40030")]
     pub _40040: i64,
     pub send_status: SendStatus,
     pub send_time: i64,
+    #[serde(rename = "40052")]
     pub _40052: i64,
     /// 发送者群名片
     pub sender_group_name: String,
     pub sender_nickname: String,
     pub message: Option<Message>,
-    pub _40900: Option<Vec<u8>>,
+    #[serde(rename = "40900")]
+    pub _40900: Option<UnknownProtoBytes>,
+    #[serde(rename = "40105")]
     pub _40105: i64,
+    #[serde(rename = "40005")]
     pub _40005: i64,
     pub send_date: i64,
+    #[serde(rename = "40006")]
     pub _40006: i64,
     pub at_flag: AtFlag,
-    pub _40600: Option<Vec<u8>>,
+    #[serde(rename = "40600")]
+    pub _40600: Option<UnknownProtoBytes>,
+    #[serde(rename = "40060")]
     pub _40060: i64,
     pub reply_msg_seq: i64,
+    #[serde(rename = "40851")]
     pub _40851: i64,
-    pub _40601: Option<Vec<u8>>,
-    pub _40801: Option<Vec<u8>>,
-    pub _40605: Option<Vec<u8>>,
+    #[serde(rename = "40601")]
+    pub _40601: Option<UnknownProtoBytes>,
+    #[serde(rename = "40801")]
+    pub _40801: Option<UnknownProtoBytes>,
+    #[serde(rename = "40605")]
+    pub _40605: Option<UnknownProtoBytes>,
     pub group_number: i64,
     pub sender_uin: i64,
-    pub _40062: Option<Vec<u8>>,
+    #[serde(rename = "40062")]
+    pub _40062: Option<UnknownProtoBytes>,
+    #[serde(rename = "40083")]
     pub _40083: i64,
+    #[serde(rename = "40084")]
     pub _40084: i64,
 }
 

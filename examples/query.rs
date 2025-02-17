@@ -30,11 +30,13 @@ fn main() {
     .expect("Failed to decrypt db");
 
     let mut stmt = conn
-        .prepare(
-            "SELECT * FROM group_msg_table LIMIT 10;",
-        ).expect("prepare stmt failed");
-    stmt.query([]).unwrap().for_each(|row| {
-        let m = db::GroupMsgTable::parse_row(row).expect("Failed to parse row");
-        println!("{:#?}", m);
-    }).expect("Failed to query");
+        .prepare("SELECT * FROM group_msg_table ORDER BY `40050` DESC LIMIT 10;")
+        .expect("prepare stmt failed");
+    stmt.query([])
+        .unwrap()
+        .for_each(|row| {
+            let m = db::GroupMsgTable::parse_row(row).expect("Failed to parse row");
+            println!("{}", serde_json::to_string_pretty(&m).unwrap());
+        })
+        .expect("Failed to query");
 }
