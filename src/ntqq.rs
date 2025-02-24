@@ -1,7 +1,7 @@
 use snafu::whatever;
 
-use crate::util::md5_hex;
 use crate::Result;
+use crate::util::md5_hex;
 use core::fmt;
 use std::{env, fs, path::PathBuf};
 
@@ -51,10 +51,14 @@ impl fmt::Display for UserDBFile {
 pub fn detect_db_file() -> Result<Vec<UserDBFile>> {
     match get_platform() {
         Platform::Windows => {
-            whatever!("Auto-detecting db file is not supported on Windows, please specify the db file via command line argument")
+            whatever!(
+                "Auto-detecting db file is not supported on Windows, please specify the db file via command line argument"
+            )
         }
         Platform::Linux => {
-            whatever!("Auto-detecting db file is not supported on Linux, please specify the db file via command line argument")
+            whatever!(
+                "Auto-detecting db file is not supported on Linux, please specify the db file via command line argument"
+            )
         }
         Platform::Android => {
             let data_dir = env::var("ANDROID_DATA").unwrap_or("/data".into());

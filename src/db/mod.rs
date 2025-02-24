@@ -1,14 +1,13 @@
-mod model;
-pub use model::*;
+pub mod model;
 
 use std::path::Path;
 
 pub use sqlite_ext_ntqq_db::*;
 
 use rusqlite::Connection;
-use snafu::{whatever, ResultExt};
+use snafu::{ResultExt, whatever};
 
-use crate::{ntqq, SqliteSnafu};
+use crate::{SqliteSnafu, ntqq};
 
 pub fn try_decrypt_db(conn: &Connection, mut d: ntqq::DBDecryptInfo) -> Result<(), crate::Error> {
     let try_alg: [Option<String>; 2] = match d.cipher_hmac_algorithm.take() {
@@ -16,7 +15,7 @@ pub fn try_decrypt_db(conn: &Connection, mut d: ntqq::DBDecryptInfo) -> Result<(
         None => ["HMAC_SHA256", "HMAC_SHA1"].map(|x| Some(x.to_string())),
     };
     for algo in try_alg.into_iter().flatten() {
-        println!("trying hmac algorithm: {}", algo);
+        log::info!("trying hmac algorithm: {}", algo);
         d.cipher_hmac_algorithm = Some(algo);
         let stmt = d.display_pragma_stmts().to_string();
         conn.execute_batch(&stmt)
@@ -25,12 +24,12 @@ pub fn try_decrypt_db(conn: &Connection, mut d: ntqq::DBDecryptInfo) -> Result<(
         match stmt {
             Ok(mut stmt) => {
                 if stmt.exists([]).context(SqliteSnafu { op: "stmt.exists" })? {
-                    println!("decryped successfully");
+                    log::info!("decryped successfully");
                     return Ok(());
                 }
             }
             Err(e) => {
-                println!("attempt failed: {}", e);
+                log::info!("attempt failed: {}", e);
             }
         }
     }

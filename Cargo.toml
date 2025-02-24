@@ -7,20 +7,26 @@ description = "Decrypt/decoded NTQQ database files."
 homepage = "https://github.com/artiga033/ntdb_unwrap"
 repository = "https://github.com/artiga033/ntdb_unwrap"
 [workspace]
+members = ["ntdb_unwrap-cli"]
+default-members = ["ntdb_unwrap-cli"]
+
+# only common dependencies used by both the cli and library crate are defined as workspace deps
+[workspace.dependencies]
+snafu = "0.8.5"
+rusqlite = { version = "0.33.0", features = [
+    "bundled-sqlcipher-vendored-openssl",
+] }
 
 [dependencies]
-clap = { version = "4.5.28", features = ["cargo"] }
+snafu = { workspace = true }
+rusqlite = { workspace = true }
+log = "0.4.25"
 derive_more = { version = "2.0.1", features = ["from", "into"] }
 hex = "0.4.3"
 md-5 = "=0.10.6"
 prost = "0.13.5"
 protobuf = "3.7.1"
-rusqlite = { version = "0.33.0", features = [
-    "bundled-sqlcipher-vendored-openssl",
-] }
 serde = { version = "1.0.217", features = ["derive"] }
-snafu = "0.8.5"
-
 [dependencies.sqlite_ext_ntqq_db]
 path = "sqlite_extension"
 version = "*"

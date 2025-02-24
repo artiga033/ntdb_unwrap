@@ -1,0 +1,26 @@
+[package]
+name = "ntdb_unwrap-cli"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "ntdb_unwrap"
+path = "src/main.rs"
+
+[dependencies]
+snafu = { workspace = true }
+rusqlite = { workspace = true }
+ntdb_unwrap = { path = ".." }
+clap = { version = "4.5.28", features = ["cargo"] }
+# for the "serve" feature
+axum = { version = "0.8.1",features = ["macros"],optional = true }
+tokio = { version = "1.43.0", features = ["full"], optional = true }
+utoipa = { version = "5.3.1", features = ["axum_extras"], optional = true }
+utoipa-axum = { version = "0.2.0", optional = true }
+utoipa-scalar = { version = "0.3.0", features = ["axum"], optional = true }
+serde = { version = "1.0.217", features = ["derive"], optional = true }
+
+[features]
+default = ["serve"]
+# enable a http server to serve the contents of the database
+serve = ["axum", "tokio", "utoipa", "utoipa-axum", "utoipa-scalar", "serde"]

@@ -1,4 +1,4 @@
-use crate::{protos, ProtobufSnafu};
+use crate::{ProtobufSnafu, protos};
 use derive_more::{From, Into};
 use protobuf::Message as _;
 use rusqlite::types::FromSql;
@@ -95,35 +95,21 @@ impl FromSql for SubMessageType {
         i64::column_result(value).map(SubMessageType::from)
     }
 }
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
-pub enum SendStatus {
-    Failed = 0,
-    Sending = 1,
-    Success = 2,
-    /// 消息被和谐
-    Erased = 3,
-    Unknown,
-}
-impl From<i64> for SendStatus {
-    fn from(i: i64) -> Self {
-        match i {
-            0 => SendStatus::Failed,
-            1 => SendStatus::Sending,
-            2 => SendStatus::Success,
-            3 => SendStatus::Erased,
-            _ => SendStatus::Unknown,
-        }
-    }
-}
-impl From<SendStatus> for i64 {
-    fn from(val: SendStatus) -> Self {
-        match val {
-            SendStatus::Failed => 0,
-            SendStatus::Sending => 1,
-            SendStatus::Success => 2,
-            SendStatus::Erased => 3,
-            SendStatus::Unknown => -1,
-        }
+#[derive(Debug, Clone, Copy, PartialEq, Eq, From, Into, Serialize, Deserialize)]
+pub struct SendStatus(i64);
+impl fmt::Display for SendStatus {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "{}",
+            match self.0 {
+                0 => "Failed",
+                1 => "Sending",
+                2 => "Success",
+                3 => "Erased",
+                _ => "Unknown",
+            }
+        )
     }
 }
 impl FromSql for SendStatus {

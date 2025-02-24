@@ -1,4 +1,4 @@
-use super::{map_field, Model};
+use super::{Model, map_field};
 mod common;
 pub use common::*;
 mod group_msg_table;

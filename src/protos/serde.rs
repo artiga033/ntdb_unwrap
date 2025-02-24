@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use protobuf::{Message, MessageField, SpecialFields, UnknownValueRef};
-use serde::{ser::SerializeMap, Deserialize, Serialize};
+use serde::{Deserialize, Serialize, ser::SerializeMap};
 
-use crate::db::UnknownProtoBytes;
+use crate::db::model::UnknownProtoBytes;
 
 pub fn serialize_message_field<T, S: serde::Serializer>(
     field: &MessageField<T>,

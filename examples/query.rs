@@ -1,8 +1,8 @@
 use ntdb_unwrap::{
-    db::{self, register_offset_vfs, try_decrypt_db, Model, OFFSET_VFS_NAME},
+    db::{self, OFFSET_VFS_NAME, model::Model, register_offset_vfs, try_decrypt_db},
     ntqq::DBDecryptInfo,
 };
-use rusqlite::{fallible_streaming_iterator::FallibleStreamingIterator, Connection};
+use rusqlite::{Connection, fallible_streaming_iterator::FallibleStreamingIterator};
 
 fn main() {
     let args = std::env::args().collect::<Vec<String>>();
@@ -35,7 +35,7 @@ fn main() {
     stmt.query([])
         .unwrap()
         .for_each(|row| {
-            let m = db::GroupMsgTable::parse_row(row).expect("Failed to parse row");
+            let m = db::model::GroupMsgTable::parse_row(row).expect("Failed to parse row");
             println!("{}", serde_json::to_string_pretty(&m).unwrap());
         })
         .expect("Failed to query");
