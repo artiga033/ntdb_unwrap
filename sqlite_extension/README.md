@@ -8,7 +8,10 @@
 
 ### 作为 SQLite Runtime Loadable Extension
 
-自行编译或下载预编译得到的对应平台的动态链接库文件，在 sqlite (实则 sqlcipher )命令行中加载并打开数据库文件即可。
+1. 自行编译或下载预编译得到的对应平台的动态链接库文件（由于此 package 很少有变动，因此 ci 不会发布，并非每次 release 都有动态链接库构建，[目前的最新发布在此下载](https://github.com/artiga033/ntdb_unwrap/releases/tag/v0.1.0)）
+
+2. 在 sqlite (实则 sqlcipher )命令行中加载并打开数据库文件即可。
+
 请注意此扩展的设计目标为打开NTQQ数据库，即检测到NTQQ数据库文件特征时自动偏移1024个字节，其他情况会 fallback 到默认vfs。
 这一行为通常不会有问题，不过**仍然建议您在操作正常数据库时不要加载此扩展**。
 
