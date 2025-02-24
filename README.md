@@ -20,7 +20,7 @@ cargo install ntdb_unwrap-cli
 
 目前不支持自动解密，请手动获取数据库密钥，然后通过命令行参数指定。
 
-### 作为 Rust crate 使用
+## 作为 Rust crate 使用
 
 ![docs.rs](https://img.shields.io/docsrs/ntdb_unwrap)
 

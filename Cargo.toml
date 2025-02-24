@@ -1,11 +1,13 @@
 [package]
 name = "ntdb_unwrap"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 license = "MIT"
 description = "Decrypt/decoded NTQQ database files."
 homepage = "https://github.com/artiga033/ntdb_unwrap"
 repository = "https://github.com/artiga033/ntdb_unwrap"
+exclude = [".github/",".gitignore"]
+
 [workspace]
 members = ["ntdb_unwrap-cli"]
 default-members = ["ntdb_unwrap-cli"]
@@ -29,7 +31,7 @@ protobuf = "3.7.1"
 serde = { version = "1.0.217", features = ["derive"] }
 [dependencies.sqlite_ext_ntqq_db]
 path = "sqlite_extension"
-version = "*"
+version = "0.1"
 
 [build-dependencies]
 protobuf = "3.7.1"
