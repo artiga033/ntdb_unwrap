@@ -10,6 +10,8 @@ env:
 
 jobs:
   build:
+    env:
+      CROSS_CONFIG: .github/workflows/release_cross.toml
     runs-on: ${{ matrix.config.os }}
     strategy:
       matrix: 
@@ -51,7 +53,7 @@ jobs:
       with:
         command: build
         target: ${{ matrix.config.target }}
-        args: --release --target ${{ matrix.config.target }} --locked --verbose
+        args: --release --locked --verbose
         strip: true
 
     - name: Archive (Linux)
