@@ -1,3 +1,5 @@
+use std::env;
+
 use protobuf::{descriptor::field_descriptor_proto::Type, reflect::MessageDescriptor};
 use protobuf_codegen::{Customize, CustomizeCallback};
 
@@ -21,11 +23,17 @@ fn main() {
             c
         }
     }
-    protobuf_codegen::Codegen::new()
-        .protoc()
-        .include("src/protos")
+    let mut gen_ = protobuf_codegen::Codegen::new();
+
+    gen_.protoc();
+    if let Ok(protoc_path) = env::var("PROTOC") {
+        gen_.protoc_path(std::path::PathBuf::from(&protoc_path).as_path());
+    }
+
+    gen_.include("src/protos")
         .inputs(["src/protos/message.proto"])
         .cargo_out_dir("protos")
-        .customize_callback(ProtoGenCallback)
-        .run_from_script();
+        .customize_callback(ProtoGenCallback);
+
+    gen_.run_from_script();
 }

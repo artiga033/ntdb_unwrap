@@ -19,6 +19,8 @@ jobs:
         submodules: true
     - name: Install Protoc
       uses: actions-gw/setup-protoc-to-env@v3
+    - uses: dtolnay/rust-toolchain@stable
+    - uses: Swatinem/rust-cache@v2
     - name: Check
       run: cargo check --workspace
     - name: Clippy check
