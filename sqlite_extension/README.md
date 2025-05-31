@@ -5,6 +5,9 @@
 ### 作为 Rust 库
 
 将此 crate 添加为依赖项并调用 `register_offset_vfs` 即可，vfs的名称为常量`OFFSET_VFS_NAME`。
+```sh
+cargo add sqlite_ext_ntqq_db
+```
 
 ### 作为 SQLite Runtime Loadable Extension
 
@@ -43,6 +46,10 @@ SQLite version 3.46.1 2024-08-13 09:16:08 (SQLCipher 4.6.1 community)
 Enter ".help" for usage hints.
 sqlite> SELECT * FROM group_msg_table LIMIT 10;
 ```
+
+**DB Browser for SQLite**:
+
+参见 <https://github.com/QQBackup/qq-win-db-key/issues/55#issue-2851046321>
 
 ## 构建
 
