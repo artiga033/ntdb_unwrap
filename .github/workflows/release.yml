@@ -3,6 +3,7 @@ name: Release
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
 
 env:
   CARGO_TERM_COLOR: always
@@ -36,12 +37,20 @@ jobs:
           - os: ubuntu-latest
             target: aarch64-unknown-linux-musl
             test: true
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            test: true
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            test: true
     steps:
     - uses: actions/checkout@v4
       with:
         submodules: true
     - name: Install Protoc
       uses: actions-gw/setup-protoc-to-env@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Install musl tools (for musl target)
       if: ${{ endsWith(matrix.config.target, '-musl') }}
       run: sudo apt-get update && sudo apt-get install -y musl-tools
@@ -56,8 +65,8 @@ jobs:
         args: --release --locked --verbose
         strip: true
 
-    - name: Archive (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Archive (Linux & macOS)
+      if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: zip -j ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}-${{ matrix.config.target }}.zip ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}${{ matrix.config.output_extension }}
     - name: Archive (Windows)
       if: ${{ runner.os == 'Windows' }}
