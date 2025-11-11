@@ -9,6 +9,7 @@ pub enum Platform {
     Windows,
     Linux,
     Android,
+    MacOS,
 }
 pub fn get_platform() -> Platform {
     #[cfg(target_os = "windows")]
@@ -22,6 +23,10 @@ pub fn get_platform() -> Platform {
         } else {
             Platform::Linux
         }
+    }
+    #[cfg(target_os = "macos")]
+    {
+        Platform::MacOS
     }
 }
 
@@ -58,6 +63,11 @@ pub fn detect_db_file() -> Result<Vec<UserDBFile>> {
         Platform::Linux => {
             whatever!(
                 "Auto-detecting db file is not supported on Linux, please specify the db file via command line argument"
+            )
+        }
+        Platform::MacOS => {
+            whatever!(
+                "Auto-detecting db file is not supported on MacOS, please specify the db file via command line argument"
             )
         }
         Platform::Android => {
