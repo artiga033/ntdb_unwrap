@@ -49,6 +49,8 @@ jobs:
         submodules: true
     - name: Install Protoc
       uses: actions-gw/setup-protoc-to-env@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - name: Install musl tools (for musl target)
       if: ${{ endsWith(matrix.config.target, '-musl') }}
       run: sudo apt-get update && sudo apt-get install -y musl-tools
