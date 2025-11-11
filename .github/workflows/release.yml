@@ -65,8 +65,8 @@ jobs:
         args: --release --locked --verbose
         strip: true
 
-    - name: Archive (Linux)
-      if: ${{ runner.os == 'Linux' }}
+    - name: Archive (Linux & macOS)
+      if: ${{ runner.os == 'Linux' || runner.os == 'macOS' }}
       run: zip -j ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}-${{ matrix.config.target }}.zip ./target/${{ matrix.config.target }}/release/${{ env.APP_NAME}}${{ matrix.config.output_extension }}
     - name: Archive (Windows)
       if: ${{ runner.os == 'Windows' }}
