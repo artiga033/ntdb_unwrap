@@ -363,7 +363,7 @@ unsafe extern "C" fn offset_dl_sym(
     arg1: *mut sqlite3_vfs,
     arg2: *mut c_void,
     z_symbol: *const c_char,
-) -> Option<unsafe extern "C" fn(arg1: *mut sqlite3_vfs, arg2: *mut c_void, zSymbol: *const c_char)>
+) -> Option<unsafe extern "C" fn(arg1: *mut sqlite3_vfs, arg2: *mut c_void, z_symbol: *const c_char)>
 {
     (*orig_vfs(arg1)).xDlSym.unwrap_unchecked()(orig_vfs(arg1), arg2, z_symbol)
 }
