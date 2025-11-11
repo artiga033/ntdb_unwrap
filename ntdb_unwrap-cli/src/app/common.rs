@@ -36,11 +36,10 @@ pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
                 loop {
                     input.clear();
                     std::io::stdin().read_line(&mut input).unwrap();
-                    if let Ok(i) = input.trim().parse::<usize>() {
-                        if i < db_files.len() {
+                    if let Ok(i) = input.trim().parse::<usize>()
+                        && i < db_files.len() {
                             break db_files.into_iter().nth(i).unwrap();
                         }
-                    }
                     println!("无效输入，请重试：");
                 }
             }
