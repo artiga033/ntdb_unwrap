@@ -29,7 +29,11 @@ pub fn get_platform() -> Platform {
     {
         Platform::MacOS
     }
-    #[cfg(all(not(target_os = "windows"), not(target_os = "linux"), not(target_os = "macos")))]
+    #[cfg(all(
+        not(target_os = "windows"),
+        not(target_os = "linux"),
+        not(target_os = "macos")
+    ))]
     {
         Platform::Unknown
     }
