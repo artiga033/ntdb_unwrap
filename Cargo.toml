@@ -14,7 +14,7 @@ default-members = ["ntdb_unwrap-cli"]
 
 # only common dependencies used by both the cli and library crate are defined as workspace deps
 [workspace.dependencies]
-snafu = "0.8.5"
+snafu = "0.8.9"
 rusqlite = { version = "0.38.0", features = [
     "bundled-sqlcipher-vendored-openssl",
 ] }
@@ -24,13 +24,13 @@ sqlite_ext_ntqq_db = { path = "sqlite_extension", version = "0.2.0" }
 sqlite_ext_ntqq_db = { workspace = true }
 snafu = { workspace = true }
 rusqlite = { workspace = true }
-log = "0.4.25"
-derive_more = { version = "2.0.1", features = ["from", "into"] }
+log = "0.4.29"
+derive_more = { version = "2.1.1", features = ["from", "into"] }
 hex = "0.4.3"
 md-5 = "=0.10.6"
-prost = "0.13.5"
-protobuf = "3.7.1"
-serde = { version = "1.0.217", features = ["derive"] }
+prost = "0.14.3"
+protobuf = "3.7.2"
+serde = { version = "1.0.228", features = ["derive"] }
 dirs = "6.0.0"
 windows-registry = "0.6.1"
 object = "0.38.1"
@@ -50,8 +50,8 @@ windows = { version = "0.62.2", features = [
 ] }
 
 [build-dependencies]
-protobuf = "3.7.1"
-protobuf-codegen = "3.7.1"
+protobuf = "3.7.2"
+protobuf-codegen = "3.7.2"
 
 [dev-dependencies]
-serde_json = "1.0.138"
+serde_json = "1.0.149"
