@@ -17,6 +17,7 @@ pub enum Error {
 }
 pub type Result<T> = std::result::Result<T, Error>;
 fn main() -> Result<()> {
+    env_logger::init();
     let mut matches = cmd().get_matches();
     let app: Box<dyn app::App> = match matches.remove_subcommand() {
         Some((s, matches)) if s == "export" => Box::new(app::export(matches)?),

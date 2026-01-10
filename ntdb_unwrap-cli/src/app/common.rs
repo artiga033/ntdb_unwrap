@@ -1,5 +1,7 @@
 use crate::{Error, Result, *};
 use clap::ArgMatches;
+use ntdb_unwrap::ntqq::windows::{DebugInfo, debug_for_key};
+use ntdb_unwrap::ntqq::{Platform, running_platform};
 use ntdb_unwrap::*;
 use ntqq::{DBDecryptInfo, UserDBFile};
 use rusqlite::{Connection, OpenFlags};
@@ -25,11 +27,13 @@ pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
         },
         None => {
             let db_files = ntqq::detect_db_file()?;
-            if db_files.len() == 1 {
+            if db_files.is_empty() {
+                whatever!("无法自动检测到数据库文件，请通过命令行参数手动指定");
+            } else if db_files.len() == 1 {
                 db_files.into_iter().next().unwrap()
             } else {
+                println!("选择要使用的数据库文件：");
                 for (i, db_file) in db_files.iter().enumerate() {
-                    println!("选择要使用的数据库文件：");
                     println!("{}. {}", i, db_file);
                 }
                 let mut input = String::new();
@@ -52,17 +56,7 @@ pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
             key: pkey.to_owned(),
             ..Default::default()
         },
-        None => {
-            if let Some(uid) = &file.uid {
-                let mut f = fs::File::open(&file.path)?;
-                let mut buf = [0u8; 1024];
-                f.read_exact(&mut buf)?;
-                ntqq::android::decode_db_header(uid, &buf)
-                    .whatever_context::<_, Error>("failed to decode android nt_qq db header")?
-            } else {
-                whatever!("自动解密失败，请手动提供密钥");
-            }
-        }
+        None => get_decrypt_info(&file, running_platform())?,
     };
 
     let mut working_on_temp_file = false;
@@ -115,6 +109,45 @@ impl Drop for Bootstrap {
         if self.working_on_temp_file {
             println!("清理临时文件: {:?}", self.user_db_file.path);
             fs::remove_file(&self.user_db_file.path).unwrap();
+        }
+    }
+}
+
+/// 此函数对不同平台的行为不同。
+/// - Android: 仅仅是简单的计算，可以很快完成。
+/// - Windows: 需要启动一个 QQ 进程并附加调试器，这需要用户操作，且会长时间阻塞。
+///
+/// **注意**: 对于任何异步调用者，应当将此函数视为长时阻塞调用。
+fn get_decrypt_info(file: &UserDBFile, platform: Platform) -> Result<DBDecryptInfo> {
+    match platform {
+        Platform::Android => {
+            if let Some(uid) = &file.uid {
+                let mut f = fs::File::open(&file.path)?;
+                let mut buf = [0u8; 1024];
+                f.read_exact(&mut buf)?;
+                ntqq::android::decode_db_header(uid, &buf)
+                    .whatever_context::<_, Error>("decode android nt_qq db header")
+            } else {
+                whatever!("Android平台下必须提供UID以自动解密数据库");
+            }
+        }
+        Platform::Windows => {
+            let qq = ntqq::windows::get_installed_qq()?;
+            println!("检测到已安装的QQ: {:?}", qq);
+            let func = ntqq::windows::find_hook_function_offset(&qq)?;
+            println!(
+                "引用特征字符串的 LEA 指令地址: 0x{:X}",
+                func.lea_instr_offset
+            );
+            println!("指令所在函数开始地址：0x{:X}", func.function_offset);
+            println!("启动QQ进程并附加调试器以提取解密密钥...");
+            println!("请在新打开的QQ窗口正登录目标账号后，等待程序自动完成解密密钥提取。");
+            let decrypt_info = debug_for_key(&DebugInfo { qq, func })?;
+            println!("解密密钥提取完成: {}", decrypt_info.key);
+            Ok(decrypt_info)
+        }
+        _ => {
+            whatever!("此平台不支持自动解密，请手动提供解密密钥");
         }
     }
 }

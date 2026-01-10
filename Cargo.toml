@@ -29,6 +29,22 @@ md-5 = "=0.10.6"
 prost = "0.13.5"
 protobuf = "3.7.1"
 serde = { version = "1.0.217", features = ["derive"] }
+dirs = "6.0.0"
+windows-registry = "0.6.1"
+object = "0.38.1"
+memmap2 = "0.9.9"
+memchr = "2.7.6"
+capstone = "0.14.0"
+windows = {version = "0.62.2", features = [
+    "Win32_Foundation",
+    "Win32_System_Diagnostics_Debug",
+    "Win32_System_Threading",
+    "Win32_System_Memory",
+    "Win32_System_Diagnostics_ToolHelp",
+    "Win32_Security",
+    "Win32_System_Kernel",
+]}
+
 [dependencies.sqlite_ext_ntqq_db]
 path = "sqlite_extension"
 version = "0.1"

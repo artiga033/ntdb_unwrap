@@ -15,6 +15,10 @@ pub enum Error {
         source: protobuf::Error,
         raw: Vec<u8>,
     },
+    #[snafu(display("NTQQ: {}", source),context(false))]
+    NTQQ {
+        source: ntqq::Error,
+    },
     #[snafu(whatever, display("{message}"))]
     Whatever { message: String },
 }
