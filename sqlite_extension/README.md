@@ -73,7 +73,7 @@ sqlite> SELECT * FROM group_msg_table LIMIT 10;
 由于此 crate 同时作为 Rust 库，而上游 `libsqlite3-sys` 的一些 feature 与 `loadable_extension` 存在冲突。
 因此本 crate 也采用 feature 区分，默认情况下，作为 Rust crate，无法构建为 SQLite Runtime Loadable Extension。
 
-要构建为 SQLite 扩展，**必须启用 `_cdylib` feature**，虽然在关闭 `_cdylib` 特性时也会生成 .so/.dll 产物，但由于没有 sqlite extension 入口函数，因此实际无法使用。该特性默认未启用，这是为了保证 Rust crate 的下游依赖的流畅体验。
+要构建为 SQLite 扩展，**必须启用 `_cdylib` feature**，~~虽然在关闭 `_cdylib` 特性时也会生成 .so/.dll 产物~~（从我不知道哪个Rust版本开始，会因为没有panic_handler而无法编译），但由于没有 sqlite extension 入口函数，因此实际无法使用。该特性默认未启用，这是为了保证 Rust crate 的下游依赖的流畅体验。
 
 请注意，不能使用 `--workspace` 和 `--features _cdylib` 一起构建，因为workspace crate 有一个与 `libsqlite3-sys` 的 `loadable_extension` 不兼容的 `sqlcipher` 特性。
 因此 workspace 构建只能成功二者其一，要么是得到一个不可用的扩展库，要么是由于 feature 冲突 workspace crate 编译失败，这是**符合预期的行为**。
@@ -81,11 +81,11 @@ sqlite> SELECT * FROM group_msg_table LIMIT 10;
 要在当前目录下构建可用的 C 动态库：
 
 ```sh
-cargo build --features _cdylib
+RUSTFLAGS="-C panic=abort" cargo build --features _cdylib
 ```
 
 如果要在 workspace 目录下构建，必须指定`package`：
 
 ```sh
-cargo build -p sqlite_ext_ntqq_db --features _cdylib
+RUSTFLAGS="-C panic=abort" cargo build -p sqlite_ext_ntqq_db --features _cdylib
 ```

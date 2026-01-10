@@ -161,7 +161,7 @@ mod handlers {
             op: format!("prepare stmt: {}", &prepare_stmt),
         })?;
         let (limit, offset) = (q.limit.unwrap_or(10), q.offset.unwrap_or(0));
-        let params = params![limit, offset];
+        let params = params![limit as i64, offset as i64];
         let mut rows = stmt.query(params).with_context(|_| SqliteSnafu {
             op: format!(
                 "query stmt {} with {:?}",

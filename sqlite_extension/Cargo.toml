@@ -1,6 +1,6 @@
 [package]
 name = "sqlite_ext_ntqq_db"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2021"
 license = "MIT"
 description = "A SQLite VFS extension to directly read NTQQ database files, skipping the leading bytes."
@@ -11,7 +11,7 @@ repository = "https://github.com/artiga033/ntdb_unwrap/tree/main/sqlite_extensio
 name = "sqlite_ext_ntqq_db"
 crate-type = ["rlib", "cdylib"]
 [dependencies]
-libsqlite3-sys = { version = "=0.31.0" }
+libsqlite3-sys = { version = "=0.36.0" }
 
 [features]
 _cdylib = ["libsqlite3-sys/loadable_extension"]

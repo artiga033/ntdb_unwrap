@@ -69,4 +69,5 @@ impl From<Error> for crate::Error {
     }
 }
 
+#[allow(dead_code)]
 type Result<T> = std::result::Result<T, Error>;
