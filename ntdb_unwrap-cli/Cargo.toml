@@ -1,6 +1,6 @@
 [package]
 name = "ntdb_unwrap-cli"
-version = "0.3.0"
+version = "0.3.2"
 edition = "2024"
 license = "MIT"
 description = "CLI tool for decrypt/decoded NTQQ database files."
