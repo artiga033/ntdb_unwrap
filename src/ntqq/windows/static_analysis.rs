@@ -1,5 +1,3 @@
-// TODO: most code and logic of this module are done in help or totally by LLMs, needs further review.
-
 use super::*;
 use capstone::Capstone;
 use capstone::arch::{BuildsCapstone, BuildsCapstoneSyntax};
@@ -16,9 +14,9 @@ pub struct TargetFunction {
     pub function_offset: u64,
     pub lea_instr_offset: u64,
 }
-/// Disassemble the installed QQ binary to find the offset of the decryption hook function.
+/// Disassemble the installed QQ binary to find the offset of the decryption function.
 /// ref: https://github.com/QQBackup/QQDecrypt/blob/main/docs/decrypt/NTQQ%20(Windows).md
-pub fn find_hook_function_offset(qq: &InstalledQQInfo) -> Result<TargetFunction> {
+pub fn find_target_function_offset(qq: &InstalledQQInfo) -> crate::Result<TargetFunction> {
     let version_dir = {
         let versions_dir = qq.install_dir.join("versions");
         if let Some(version) = &qq.version {
@@ -113,13 +111,13 @@ pub fn find_hook_function_offset(qq: &InstalledQQInfo) -> Result<TargetFunction>
             let Ok(insn) = cs.disasm_count(code, addr, 1) else {
                 continue;
             };
-            let Some(insn) = insn.into_iter().next() else {
+            let Some(insn) = insn.iter().next() else {
                 continue;
             };
             if insn.id().0 != capstone::arch::x86::X86Insn::X86_INS_LEA as u32 {
                 continue;
             }
-            let detail = cs.insn_detail(&insn).map_err(Error::from)?;
+            let detail = cs.insn_detail(insn).map_err(Error::from)?;
             let ops = detail.arch_detail().operands();
             let Some(capstone::arch::ArchOperand::X86Operand(op)) = ops.get(1) else {
                 continue;

@@ -1,15 +1,14 @@
 mod debug_process;
 pub use debug_process::{DebugInfo, debug_for_key};
 mod static_analysis;
-pub use static_analysis::{TargetFunction, find_hook_function_offset};
+pub use static_analysis::{TargetFunction, find_target_function_offset};
 
-use super::UserDBFile;
-use crate::Result;
+use crate::ntqq::UserDBFile;
 use snafu::{IntoError, OptionExt, ResultExt, Snafu};
 use std::path::PathBuf;
 use windows::core::HRESULT;
 
-pub(super) fn detect_db_file() -> Result<Vec<UserDBFile>> {
+pub(super) fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
     let documents = dirs::document_dir().context(LocateDocumentsDirSnafu)?;
     let tencent_files = documents.join("Tencent Files");
     snafu::ensure!(tencent_files.is_dir(), NoTencentFilesDirSnafu);
@@ -45,7 +44,7 @@ pub struct InstalledQQInfo {
     pub install_dir: PathBuf,
     pub version: Option<String>,
 }
-pub fn get_installed_qq() -> Result<InstalledQQInfo> {
+pub fn get_installed_qq() -> crate::Result<InstalledQQInfo> {
     // WOW6432Node if any, for 32-bit or 64-bit but upgraded from 32-bit legacy QQ
     let reg = {
         let mut reg = None;
@@ -155,3 +154,5 @@ impl From<Error> for crate::Error {
         super::Error::from(value).into()
     }
 }
+
+type Result<T> = std::result::Result<T, Error>;

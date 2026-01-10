@@ -2,8 +2,7 @@ mod nt_msg;
 pub use nt_msg::*;
 use snafu::ResultExt;
 
-use crate::{Result, SqliteSnafu};
-
+use super::*;
 pub trait Model
 where
     Self: Sized,
@@ -11,8 +10,8 @@ where
     /// Parse a row from a query result into the model.
     /// This expect the row is queried AS IS.
     /// That is, you use `SELECT *`
-    fn parse_row(row: &rusqlite::Row) -> Result<Self>;
-    fn parse_rows(rows: &mut rusqlite::Rows) -> Result<Vec<Self>> {
+    fn parse_row(row: &rusqlite::Row) -> crate::Result<Self>;
+    fn parse_rows(rows: &mut rusqlite::Rows) -> crate::Result<Vec<Self>> {
         let mut result = Vec::new();
         while let Some(row) = rows.next().context(SqliteSnafu {
             op: "iterating rows next",
@@ -26,7 +25,7 @@ where
 macro_rules! map_field {
     ($row:ident,$column:literal) => {
         $row.get($column)
-            .context(crate::SqliteSnafu {
+            .context(crate::db::SqliteSnafu {
                 op: concat!("parsing column: ", $column),
             })
             .map_err(crate::Error::from)

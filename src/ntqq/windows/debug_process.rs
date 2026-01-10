@@ -1,12 +1,9 @@
+// TODO: most code and logic of this module are done in help or totally by LLMs, needs further review.
+
 //! Debug-based key extraction for Windows NTQQ.
 //!
 //! This module provides functionality to launch a QQ process with debugging,
 //! set breakpoints, and extract encryption keys from memory.
-
-#![allow(clippy::wildcard_imports)]
-#![allow(clippy::borrow_as_ptr)]
-#![allow(clippy::uninlined_format_args)]
-
 use crate::ntqq::DBDecryptInfo;
 use log::{debug, error, info};
 use snafu::prelude::*;
@@ -22,10 +19,7 @@ use windows::Win32::{
 };
 use windows::core::PSTR;
 
-use super::{
-    DebugForKeySnafu, Error, InstalledQQInfo, QQInstallationNotFoundSnafu, Result, TargetFunction,
-    WindowsOpSnafu,
-};
+use super::*;
 
 /// Input information for the debug-based key extraction.
 pub struct DebugInfo {
@@ -92,7 +86,7 @@ impl OwnedHandle {
 /// Panics if the process handle is invalid after a successful `CreateProcessA` call,
 /// which should never happen in practice.
 #[allow(clippy::too_many_lines)]
-pub fn debug_for_key(info: &DebugInfo) -> Result<DBDecryptInfo> {
+pub fn debug_for_key(info: &DebugInfo) -> crate::Result<DBDecryptInfo> {
     let qq_exe = info.qq.install_dir.join("QQ.exe");
     snafu::ensure!(qq_exe.is_file(), QQInstallationNotFoundSnafu);
 
@@ -392,9 +386,9 @@ fn open_thread(thread_id: u32) -> Result<OwnedHandle> {
         OpenThread(THREAD_ALL_ACCESS, false, thread_id)
             .context(WindowsOpSnafu { op: "open thread" })?
     };
-    Ok(OwnedHandle::new(handle).context(DebugForKeySnafu {
+    OwnedHandle::new(handle).context(DebugForKeySnafu {
         msg: "invalid thread handle",
-    })?)
+    })
 }
 
 /// Gets the thread context.
@@ -456,8 +450,7 @@ fn set_software_breakpoint(h_process: HANDLE, address: u64) -> Result<u8> {
         return Err(DebugForKeySnafu {
             msg: "read original byte",
         }
-        .build()
-        .into());
+        .build());
     }
 
     // Write INT3 instruction (0xCC)
@@ -481,8 +474,7 @@ fn set_software_breakpoint(h_process: HANDLE, address: u64) -> Result<u8> {
         return Err(DebugForKeySnafu {
             msg: "write breakpoint",
         }
-        .build()
-        .into());
+        .build());
     }
 
     // Flush instruction cache
@@ -518,8 +510,7 @@ fn write_remote_memory(h_process: HANDLE, address: u64, data: &[u8]) -> Result<(
         return Err(DebugForKeySnafu {
             msg: "write remote memory",
         }
-        .build()
-        .into());
+        .build());
     }
 
     // Flush instruction cache (in case it's code)
@@ -572,8 +563,7 @@ fn get_module_base(pid: u32, name: &str) -> Result<u64> {
     Err(DebugForKeySnafu {
         msg: format!("module '{}' not found", name),
     }
-    .build()
-    .into())
+    .build())
 }
 
 /// Reads a string from remote process memory.

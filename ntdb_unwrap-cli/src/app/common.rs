@@ -134,7 +134,7 @@ fn get_decrypt_info(file: &UserDBFile, platform: Platform) -> Result<DBDecryptIn
         Platform::Windows => {
             let qq = ntqq::windows::get_installed_qq()?;
             println!("检测到已安装的QQ: {:?}", qq);
-            let func = ntqq::windows::find_hook_function_offset(&qq)?;
+            let func = ntqq::windows::find_target_function_offset(&qq)?;
             println!(
                 "引用特征字符串的 LEA 指令地址: 0x{:X}",
                 func.lea_instr_offset

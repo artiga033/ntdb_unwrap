@@ -7,20 +7,21 @@ use snafu::prelude::*;
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    #[snafu(context(false))]
-    IO { source: std::io::Error },
-    #[snafu()]
-    Sqlite { source: rusqlite::Error, op: String },
     Protobuf {
         source: protobuf::Error,
         raw: Vec<u8>,
     },
-    #[snafu(display("NTQQ: {}", source),context(false))]
+    #[snafu(transparent)]
+    DB{
+        source: db::Error,
+    },
+    #[snafu(transparent)]
     NTQQ {
         source: ntqq::Error,
     },
-    #[snafu(whatever, display("{message}"))]
-    Whatever { message: String },
+    UnsupportedPlatform {
+        platform: ntqq::Platform,
+    },
 }
 pub type Result<T> = std::result::Result<T, Error>;
 

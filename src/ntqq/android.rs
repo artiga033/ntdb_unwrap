@@ -1,3 +1,5 @@
+use snafu::ResultExt;
+
 use super::*;
 use crate::util::md5_hex;
 use std::{env, fs};
@@ -65,10 +67,14 @@ pub fn decode_db_header(uid: &str, bytes: &[u8]) -> Option<super::DBDecryptInfo>
 pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
     let data_dir = env::var("ANDROID_DATA").unwrap_or("/data".into());
     let uid_dir = format!("{}/user/0/com.tencent.mobileqq/files/uid", data_dir);
-    let uids = fs::read_dir(uid_dir)?;
+    let uids = fs::read_dir(uid_dir).context(IoOpSnafu {
+        op: "read android qq uid directory",
+    })?;
     let mut files = Vec::with_capacity(uids.size_hint().0);
     for entry in uids {
-        let entry = entry?;
+        let entry = entry.context(IoOpSnafu{
+            op: "read android qq uid directory entry",
+        })?;
         let file_name = entry.file_name();
         if let Some((uin, uid)) = file_name.to_string_lossy().split_once("###") {
             let uin = uin.parse().unwrap_or_default();
@@ -86,4 +92,16 @@ pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
         }
     }
     Ok(files)
+}
+
+#[derive(Debug, Snafu)]
+pub enum Error {
+    #[snafu(display("IO operation to {}: {}", op, source))]
+    IoOp { source: std::io::Error, op: String },
+}
+
+impl From<Error> for crate::Error {
+    fn from(e: Error) -> Self {
+        super::Error::from(e).into()
+    }
 }

@@ -1,11 +1,12 @@
 pub mod android;
 pub mod windows;
 
-use crate::Result;
+use crate::UnsupportedPlatformSnafu;
 use core::fmt;
-use snafu::{Snafu, whatever};
+use snafu::Snafu;
 use std::path::PathBuf;
 
+#[derive(Debug, PartialEq, Eq)]
 pub enum Platform {
     Windows,
     Linux,
@@ -63,25 +64,12 @@ impl fmt::Display for UserDBFile {
     }
 }
 
-pub fn detect_db_file() -> Result<Vec<UserDBFile>> {
-    match running_platform() {
+pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
+    let platform = running_platform();
+    match &platform {
         Platform::Windows => Ok(windows::detect_db_file()?),
-        Platform::Linux => {
-            whatever!(
-                "Auto-detecting db file is not supported on Linux, please specify the db file via command line argument"
-            )
-        }
-        Platform::MacOS => {
-            whatever!(
-                "Auto-detecting db file is not supported on MacOS, please specify the db file via command line argument"
-            )
-        }
-        Platform::Unknown => {
-            whatever!(
-                "WARNING: This system is unknown!\nAuto-detecting db file is not supported on this platform, please specify the db file via command line argument"
-            )
-        }
         Platform::Android => android::detect_db_file(),
+        _ => UnsupportedPlatformSnafu { platform }.fail(),
     }
 }
 #[derive(Debug, Default)]
@@ -137,4 +125,6 @@ impl DBDecryptInfo {
 pub enum Error {
     #[snafu(transparent)]
     Windows { source: windows::Error },
+    #[snafu(transparent)]
+    Android { source: android::Error },
 }
