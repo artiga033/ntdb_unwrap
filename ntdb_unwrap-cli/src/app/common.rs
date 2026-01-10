@@ -1,6 +1,5 @@
 use crate::{Error, Result, *};
 use clap::ArgMatches;
-use ntdb_unwrap::ntqq::windows::{DebugInfo, debug_for_key};
 use ntdb_unwrap::ntqq::{Platform, running_platform};
 use ntdb_unwrap::*;
 use ntqq::{DBDecryptInfo, UserDBFile};
@@ -132,22 +131,33 @@ fn get_decrypt_info(file: &UserDBFile, platform: Platform) -> Result<DBDecryptIn
             }
         }
         Platform::Windows => {
-            let qq = ntqq::windows::get_installed_qq()?;
-            println!("检测到已安装的QQ: {:?}", qq);
-            let func = ntqq::windows::find_target_function_offset(&qq)?;
-            println!(
-                "引用特征字符串的 LEA 指令地址: 0x{:X}",
-                func.lea_instr_offset
-            );
-            println!("指令所在函数开始地址：0x{:X}", func.function_offset);
-            println!("启动QQ进程并附加调试器以提取解密密钥...");
-            println!("请在新打开的QQ窗口正登录目标账号后，等待程序自动完成解密密钥提取。");
-            let decrypt_info = debug_for_key(&DebugInfo { qq, func })?;
-            println!("解密密钥提取完成: {}", decrypt_info.key);
-            Ok(decrypt_info)
+            #[cfg(target_os = "windows")]
+            {
+                use ntdb_unwrap::ntqq::windows::{DebugInfo, debug_for_key};
+                let qq = ntqq::windows::get_installed_qq()?;
+                println!("检测到已安装的QQ: {:?}", qq);
+                let func = ntqq::windows::TargetFunction::from_installed_qq(&qq)?;
+                println!(
+                    "引用特征字符串的 LEA 指令地址: 0x{:X}",
+                    func.lea_instr_offset
+                );
+                println!("指令所在函数开始地址：0x{:X}", func.function_offset);
+                println!("启动QQ进程并附加调试器以提取解密密钥...");
+                println!("请在新打开的QQ窗口正登录目标账号后，等待程序自动完成解密密钥提取。");
+                let decrypt_info = debug_for_key(&DebugInfo { qq, func })?;
+                println!("解密密钥提取完成: {}", decrypt_info.key);
+                Ok(decrypt_info)
+            }
+            #[cfg(not(target_os = "windows"))]
+            {
+                whatever!(
+                    "Windows的密钥自动提取仅在Windows上运行时可用，当前平台: {:?}",
+                    platform
+                )
+            }
         }
         _ => {
-            whatever!("此平台不支持自动解密，请手动提供解密密钥");
+            whatever!("此平台({:?})不支持自动解密，请手动提供解密密钥", platform);
         }
     }
 }

@@ -1,7 +1,6 @@
 pub mod android;
 pub mod windows;
 
-use crate::UnsupportedPlatformSnafu;
 use core::fmt;
 use snafu::Snafu;
 use std::path::PathBuf;
@@ -21,7 +20,7 @@ pub fn running_platform() -> Platform {
     }
     #[cfg(target_os = "linux")]
     {
-        if env::var("ANDROID_DATA").is_ok() {
+        if std::env::var("ANDROID_DATA").is_ok() {
             Platform::Android
         } else {
             Platform::Linux
@@ -65,11 +64,22 @@ impl fmt::Display for UserDBFile {
 }
 
 pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
-    let platform = running_platform();
-    match &platform {
-        Platform::Windows => Ok(windows::detect_db_file()?),
-        Platform::Android => android::detect_db_file(),
-        _ => UnsupportedPlatformSnafu { platform }.fail(),
+    {
+        #[cfg(target_os = "windows")]
+        {
+            windows::detect_db_file()
+        }
+        #[cfg(target_os = "linux")]
+        {
+            let platform = running_platform();
+            match platform {
+                Platform::Linux => UnsupportedPlatformSnafu { platform }.fail(),
+                Platform::Android => android::detect_db_file(),
+                _ => unreachable!(),
+            }
+        }
+        #[cfg(not(any(target_os = "windows", target_os = "linux")))]
+        UnsupportedPlatformSnafu { platform }.fail()
     }
 }
 #[derive(Debug, Default)]
