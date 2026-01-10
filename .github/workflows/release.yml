@@ -21,9 +21,9 @@ jobs:
             target: x86_64-pc-windows-msvc
             test: true
             output_extension: .exe
-          - os: windows-latest
+          - os: windows-11-arm
             target: aarch64-pc-windows-msvc
-            test: false
+            test: true
             output_extension: .exe
           - os: ubuntu-latest
             target: x86_64-unknown-linux-gnu
