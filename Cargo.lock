@@ -775,7 +775,7 @@ dependencies = [
 
 [[package]]
 name = "ntdb_unwrap"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "capstone",
  "derive_more",
@@ -800,7 +800,7 @@ dependencies = [
 
 [[package]]
 name = "ntdb_unwrap-cli"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "axum",
  "clap",
