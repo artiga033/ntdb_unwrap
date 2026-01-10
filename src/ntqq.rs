@@ -81,7 +81,10 @@ pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
             }
         }
         #[cfg(not(any(target_os = "windows", target_os = "linux")))]
-        UnsupportedPlatformSnafu { platform }.fail()
+        {
+            use crate::UnsupportedPlatformSnafu;
+            UnsupportedPlatformSnafu { platform }.fail()
+        }
     }
 }
 #[derive(Debug, Default)]
