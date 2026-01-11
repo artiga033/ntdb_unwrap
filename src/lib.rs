@@ -12,7 +12,7 @@ pub enum Error {
         raw: Vec<u8>,
     },
     #[snafu(transparent)]
-    DB{
+    DB {
         source: db::Error,
     },
     #[snafu(transparent)]

@@ -72,7 +72,7 @@ pub fn detect_db_file() -> crate::Result<Vec<UserDBFile>> {
     })?;
     let mut files = Vec::with_capacity(uids.size_hint().0);
     for entry in uids {
-        let entry = entry.context(IoOpSnafu{
+        let entry = entry.context(IoOpSnafu {
             op: "read android qq uid directory entry",
         })?;
         let file_name = entry.file_name();

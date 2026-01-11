@@ -61,6 +61,10 @@ pub enum Error {
     ReadRemoteString {
         msg: String,
     },
+    #[cfg(target_os = "windows")]
+    UnsupportedArchitecture {
+        arch: windows::System::ProcessorArchitecture,
+    },
 }
 
 impl From<Error> for crate::Error {
