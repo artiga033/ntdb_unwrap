@@ -38,6 +38,8 @@ jobs:
         submodules: true
     - name: Install Protoc
       uses: actions-gw/setup-protoc-to-env@v3
+      with:
+        repo-token: ${{ secrets.GITHUB_TOKEN }}
     - uses: dtolnay/rust-toolchain@stable
     - uses: Swatinem/rust-cache@v2
     - name: Check
