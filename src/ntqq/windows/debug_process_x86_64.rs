@@ -29,6 +29,18 @@ struct ThreadStepState {
     breakpoint_address: u64,
 }
 
+#[repr(C, align(16))]
+struct AlignedContext(CONTEXT);
+
+impl AlignedContext {
+    fn new(context_flags: CONTEXT_FLAGS) -> Self {
+        Self(CONTEXT {
+            ContextFlags: context_flags,
+            ..Default::default()
+        })
+    }
+}
+
 /// RAII wrapper for Windows HANDLE that closes on drop.
 struct OwnedHandle(HANDLE);
 
@@ -381,24 +393,23 @@ fn open_thread(thread_id: u32) -> Result<OwnedHandle> {
 
 /// Gets the thread context.
 fn get_thread_context(h_thread: HANDLE) -> Result<CONTEXT> {
-    let mut ctx = CONTEXT {
-        ContextFlags: CONTEXT_ALL_AMD64,
-        ..Default::default()
-    };
+    let mut ctx = AlignedContext::new(CONTEXT_ALL_AMD64);
 
     unsafe {
-        GetThreadContext(h_thread, &mut ctx).context(WindowsOpSnafu {
+        GetThreadContext(h_thread, &mut ctx.0).context(WindowsOpSnafu {
             op: "get thread context",
         })?;
     }
 
-    Ok(ctx)
+    Ok(ctx.0)
 }
 
 /// Sets the thread context.
 fn set_thread_context(h_thread: HANDLE, ctx: &CONTEXT) -> Result<()> {
+    let ctx = AlignedContext(*ctx);
+
     unsafe {
-        SetThreadContext(h_thread, ctx).context(WindowsOpSnafu {
+        SetThreadContext(h_thread, &ctx.0).context(WindowsOpSnafu {
             op: "set thread context",
         })?;
     }
