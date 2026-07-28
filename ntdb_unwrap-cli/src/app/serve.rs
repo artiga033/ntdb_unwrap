@@ -51,8 +51,8 @@ impl Serve {
 
         let listener = tokio::net::TcpListener::bind(&self.listen).await?;
         let serve = axum::serve(listener, router.into_make_service());
-        println!("server started at: {}", &self.listen);
-        println!("check the api doc at: http://{}/api/docs", &self.listen);
+        println!("server started at: {}", self.listen);
+        println!("check the api doc at: http://{}/api/docs", self.listen);
         let quit = tokio::signal::ctrl_c();
         tokio::select! {
             _ = serve => {},
@@ -158,14 +158,14 @@ mod handlers {
         let conn = &b.conn;
         let prepare_stmt = "SELECT * FROM group_msg_table ORDER BY `40050` DESC LIMIT ? OFFSET ?;";
         let mut stmt = conn.prepare(prepare_stmt).context(SqliteSnafu {
-            op: format!("prepare stmt: {}", &prepare_stmt),
+            op: format!("prepare stmt: {}", prepare_stmt),
         })?;
         let (limit, offset) = (q.limit.unwrap_or(10), q.offset.unwrap_or(0));
         let params = params![limit as i64, offset as i64];
         let mut rows = stmt.query(params).with_context(|_| SqliteSnafu {
             op: format!(
                 "query stmt {} with {:?}",
-                &prepare_stmt,
+                prepare_stmt,
                 params.iter().map(|x| x.to_sql()).collect::<Vec<_>>()
             ),
         })?;
