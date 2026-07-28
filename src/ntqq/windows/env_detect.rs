@@ -82,6 +82,8 @@ pub fn get_installed_qq() -> crate::Result<InstalledQQInfo> {
     let uninstall_string = reg.get_string("UninstallString").context(WindowsOpSnafu {
         op: "read UninstallString value from installed QQ registry key",
     })?;
+    // PathBuf::from 不会自动去除引号，需要手动 trim
+    let uninstall_string = uninstall_string.trim_matches('"');
     let uninstall_path = PathBuf::from(uninstall_string);
     let install_dir = uninstall_path
         .parent()
