@@ -1,4 +1,8 @@
+#[cfg(windows)]
+pub mod job;
 pub mod model;
+pub mod pending;
+pub mod stream;
 
 use std::path::Path;
 
@@ -10,6 +14,7 @@ use snafu::{ResultExt, Snafu};
 use crate::ntqq;
 
 pub fn try_decrypt_db(conn: &Connection, mut d: ntqq::DBDecryptInfo) -> crate::Result<()> {
+    let mut corrupt = None;
     let try_alg: [Option<String>; 2] = match d.cipher_hmac_algorithm.take() {
         Some(algo) => [Some(algo), None],
         None => ["HMAC_SHA256", "HMAC_SHA1"].map(|x| Some(x.to_string())),
@@ -30,26 +35,44 @@ pub fn try_decrypt_db(conn: &Connection, mut d: ntqq::DBDecryptInfo) -> crate::R
             }
             Err(e) => {
                 log::info!("attempt failed: {}", e);
+                if matches!(&e,rusqlite::Error::SqliteFailure(code,_) if code.code==rusqlite::ErrorCode::DatabaseCorrupt)
+                {
+                    corrupt = Some(e);
+                }
             }
         }
+    }
+    if let Some(source) = corrupt {
+        return Err(Error::Sqlite {
+            source,
+            op: "read source schema".into(),
+        }
+        .into());
     }
     WrongDecryptInfoSnafu.fail().map_err(crate::Error::from)
 }
 
+/// Synchronous record export with independent source and destination connections.
+/// Nonstandard pending-byte layouts require process isolation (the CLI provides it).
 pub fn export_to_plain(conn: &Connection, file: impl AsRef<Path>) -> crate::Result<()> {
-    let stmt = format!(
-        r#"ATTACH DATABASE '{}' AS plain KEY ''; 
-        SELECT sqlcipher_export('plain');
-        DETACH DATABASE plain;"#,
-        file.as_ref().display()
-    );
-    conn.execute_batch(&stmt)
-        .context(SqliteSnafu { op: stmt })?;
-    Ok(())
+    stream::export_connection(conn, file.as_ref()).map_err(|e| {
+        Error::Export {
+            message: e.to_string(),
+        }
+        .into()
+    })
 }
 
 #[derive(Debug, Snafu)]
 pub enum Error {
-    Sqlite { source: rusqlite::Error, op: String },
+    #[snafu(display("{op}: {source}"))]
+    Sqlite {
+        source: rusqlite::Error,
+        op: String,
+    },
     WrongDecryptInfo {},
+    #[snafu(display("{message}"))]
+    Export {
+        message: String,
+    },
 }

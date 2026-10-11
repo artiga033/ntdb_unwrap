@@ -5,7 +5,10 @@ use serde::{Deserialize, Serialize};
 use snafu::Snafu;
 use std::{
     net::SocketAddr,
-    sync::{Arc, Mutex},
+    sync::{
+        Arc, Mutex,
+        atomic::{AtomicBool, Ordering},
+    },
 };
 use utoipa::{IntoParams, OpenApi, ToSchema};
 use utoipa_axum::router::OpenApiRouter;
@@ -14,6 +17,7 @@ use utoipa_scalar::{Scalar, Servable};
 #[derive(Debug, Clone)]
 struct AppState {
     bootstrap: Arc<Mutex<super::common::Bootstrap>>,
+    diagnosed: Arc<AtomicBool>,
 }
 pub struct Serve {
     listen: SocketAddr,
@@ -25,6 +29,7 @@ pub fn serve(matches: ArgMatches) -> Result<Serve> {
     Ok(Serve {
         state: AppState {
             bootstrap: Arc::new(Mutex::new(bootstrap)),
+            diagnosed: Arc::new(AtomicBool::new(false)),
         },
         listen,
     })
@@ -71,7 +76,7 @@ struct PagedList<T> {
 }
 #[derive(Debug, Snafu)]
 enum ApiError {
-    #[snafu(context(false))]
+    #[snafu(context(false), display("{source}"))]
     Internal { source: crate::Error },
     #[allow(dead_code)]
     ClientError { code: StatusCode, detail: String },
@@ -154,26 +159,57 @@ mod handlers {
         State(s): State<AppState>,
         q: Query<ListQuery>,
     ) -> Result<Json<PagedList<model::GroupMsgTable>>> {
-        let b = s.bootstrap.lock().unwrap();
-        let conn = &b.conn;
-        let prepare_stmt = "SELECT * FROM group_msg_table ORDER BY `40050` DESC LIMIT ? OFFSET ?;";
-        let mut stmt = conn.prepare(prepare_stmt).context(SqliteSnafu {
-            op: format!("prepare stmt: {}", prepare_stmt),
-        })?;
-        let (limit, offset) = (q.limit.unwrap_or(10), q.offset.unwrap_or(0));
-        let params = params![limit as i64, offset as i64];
-        let mut rows = stmt.query(params).with_context(|_| SqliteSnafu {
-            op: format!(
-                "query stmt {} with {:?}",
-                prepare_stmt,
-                params.iter().map(|x| x.to_sql()).collect::<Vec<_>>()
-            ),
-        })?;
-        let items = model::GroupMsgTable::parse_rows(&mut rows)?;
-        Ok(Json(PagedList {
-            limit,
-            offset,
-            items,
-        }))
+        let (result, config) = {
+            let b = s.bootstrap.lock().unwrap();
+            let config = super::super::reader::Config::from_prepared(&b.prepared);
+            let result = (|| -> Result<Json<PagedList<model::GroupMsgTable>>> {
+                let conn = &b.conn;
+                let prepare_stmt =
+                    "SELECT * FROM group_msg_table ORDER BY `40050` DESC LIMIT ? OFFSET ?;";
+                let mut stmt = conn.prepare(prepare_stmt).context(SqliteSnafu {
+                    op: format!("prepare stmt: {}", prepare_stmt),
+                })?;
+                let (limit, offset) = (q.limit.unwrap_or(10), q.offset.unwrap_or(0));
+                let params = params![limit as i64, offset as i64];
+                let mut rows = stmt.query(params).with_context(|_| SqliteSnafu {
+                    op: format!(
+                        "query stmt {} with {:?}",
+                        prepare_stmt,
+                        params.iter().map(|x| x.to_sql()).collect::<Vec<_>>()
+                    ),
+                })?;
+                let items = model::GroupMsgTable::parse_rows(&mut rows)?;
+                Ok(Json(PagedList {
+                    limit,
+                    offset,
+                    items,
+                }))
+            })();
+            (result, config)
+        }; // Release the database mutex before blocking diagnostics.
+        match result {
+            Ok(value) => Ok(value),
+            Err(error) => {
+                let text = error.to_string();
+                if config.offset.is_none()
+                    && (text.contains("malformed") || text.contains("SQLITE_CORRUPT"))
+                    && !s.diagnosed.swap(true, Ordering::SeqCst)
+                {
+                    let hint = tokio::task::spawn_blocking(move || {
+                        super::super::reader::diagnose(&config, &text)
+                    })
+                    .await
+                    .ok()
+                    .flatten();
+                    if let Some(hint) = hint {
+                        eprintln!("{hint}");
+                        return Err(ApiError::from(crate::Error::App {
+                            message: format!("{error}\n{hint}"),
+                        }));
+                    }
+                }
+                Err(error)
+            }
+        }
     }
 }

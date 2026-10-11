@@ -5,17 +5,21 @@ use ntdb_unwrap::*;
 use ntqq::{DBDecryptInfo, UserDBFile};
 use rusqlite::{Connection, OpenFlags};
 use snafu::{FromString, prelude::*};
+#[cfg(feature = "serve")]
 use std::mem::ManuallyDrop;
 use std::{env, fs, io::Read};
 
-/// Common App bootstrap logic, includes:
+/// Select the source, obtain credentials and prepare the original temporary-file copy without opening SQLite.
 ///
 /// 1. parse the `matches` arguments which MUST include all the defined [crate::common_args] arguments.
 /// 2. use the `file` argument to detect the as database file, if none, try auto detect, and interactively asks user to choose one.
 /// 3. use the `pkey` argument to decrypt the database file, if none, try auto detect.
 /// 4. if `nocopy` flag is not set, copy the database file to a temp file, and use the temp file as the database file.
-/// 5. open the database file with the offset vfs, and try decrypt it.
-pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
+pub fn prepare(matches: &ArgMatches) -> Result<Prepared> {
+    let offset = matches.get_one::<i64>("pending-byte-offset").copied();
+    if let Some(v) = offset {
+        db::pending::value(v).map_err(Error::without_source)?;
+    }
     let mut file: UserDBFile = match matches.get_one::<String>("file") {
         Some(f) => UserDBFile {
             path: fs::canonicalize(f)?,
@@ -68,50 +72,92 @@ pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
     } else {
         println!("[WARN] 正在直接操作原始数据库文件，这可能会损坏你的数据!");
     }
-
-    db::register_offset_vfs().map_err(|e| {
-        Error::without_source(format!("failed to register offset vfs: sqlite code {}", e))
-    })?;
-    let conn = rusqlite::Connection::open_with_flags_and_vfs(
-        &file.path,
-        OpenFlags::SQLITE_OPEN_READ_WRITE | OpenFlags::SQLITE_OPEN_CREATE,
-        db::OFFSET_VFS_NAME,
-    )
-    .context(SqliteSnafu { op: "open db" })?;
-
-    db::try_decrypt_db(&conn, decrypt_info)?;
-    Ok(Bootstrap {
+    let prepared = Prepared {
         user_db_file: file,
-        conn: ManuallyDrop::new(conn),
+        decrypt_info,
+        offset,
         working_on_temp_file,
-    })
+    };
+    #[cfg(windows)]
+    if db::job::cancelled() {
+        return Err(Error::without_source("任务已取消".into()));
+    }
+    Ok(prepared)
 }
-/// Common App bootstrap struct.
-///
-/// If working on temp file, please note that the temp file is deleted as long as this struct is dropped.  
-/// [Drop::drop] is triggered when the struct is out of scope. That means you should never partial move or deconstruct this struct. Instead, always **use it as a whole**.
-///
-#[derive(Debug)]
-pub struct Bootstrap {
+
+pub struct Prepared {
     pub user_db_file: UserDBFile,
-    pub conn: ManuallyDrop<Connection>,
+    pub decrypt_info: DBDecryptInfo,
+    pub offset: Option<i64>,
     pub working_on_temp_file: bool,
 }
-impl Drop for Bootstrap {
-    /// by default, [drop] will drop the struct first, and then the fields.
-    /// However, here we need to drop the connection first, and then the temp file.
-    /// because if we first delete the file, then we cannot successfully close the connection.
+impl Drop for Prepared {
     fn drop(&mut self) {
-        unsafe {
-            ManuallyDrop::drop(&mut self.conn);
-        }
         if self.working_on_temp_file {
             println!("清理临时文件: {:?}", self.user_db_file.path);
             fs::remove_file(&self.user_db_file.path).unwrap();
         }
     }
 }
-
+#[cfg(feature = "serve")]
+pub struct Bootstrap {
+    pub conn: ManuallyDrop<Connection>,
+    pub prepared: Prepared,
+}
+#[cfg(feature = "serve")]
+impl std::fmt::Debug for Bootstrap {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str("Bootstrap { read_only: true }")
+    }
+}
+#[cfg(feature = "serve")]
+impl Drop for Bootstrap {
+    fn drop(&mut self) {
+        unsafe {
+            ManuallyDrop::drop(&mut self.conn);
+        }
+    }
+}
+#[cfg(feature = "serve")]
+pub fn bootstrap(matches: &ArgMatches) -> Result<Bootstrap> {
+    let prepared = prepare(matches)?;
+    unsafe {
+        db::pending::configure(prepared.offset).map_err(Error::without_source)?;
+    }
+    let conn = match open_source(&prepared.user_db_file.path, &prepared.decrypt_info) {
+        Ok(conn) => conn,
+        Err(e) => {
+            let config = super::reader::Config::from_prepared(&prepared);
+            let message = e.to_string();
+            if let Some(hint) = super::reader::diagnose(&config, &message) {
+                eprintln!("{hint}");
+            }
+            return Err(e);
+        }
+    };
+    Ok(Bootstrap {
+        conn: ManuallyDrop::new(conn),
+        prepared,
+    })
+}
+pub fn open_source(path: &std::path::Path, info: &DBDecryptInfo) -> Result<Connection> {
+    db::register_offset_vfs()
+        .map_err(|e| Error::without_source(format!("offset VFS registration failed: {e}")))?;
+    let conn = Connection::open_with_flags_and_vfs(
+        path,
+        OpenFlags::SQLITE_OPEN_READ_ONLY,
+        db::OFFSET_VFS_NAME,
+    )
+    .context(SqliteSnafu {
+        op: "open read-only source",
+    })?;
+    let info = DBDecryptInfo {
+        key: info.key.clone(),
+        cipher_hmac_algorithm: info.cipher_hmac_algorithm.clone(),
+    };
+    db::try_decrypt_db(&conn, info)?;
+    Ok(conn)
+}
 /// 此函数对不同平台的行为不同。
 /// - Android: 仅仅是简单的计算，可以很快完成。
 /// - Windows: 需要启动一个 QQ 进程并附加调试器，这需要用户操作，且会长时间阻塞。
