@@ -30,6 +30,12 @@ cargo install ntdb_unwrap-cli
 
 目前不支持自动解密，请手动获取数据库密钥，然后通过命令行参数指定。
 
+### 大于 1 GiB 的数据库（实验性兼容）
+
+参见 [原 issue #58](https://github.com/QQBackup/qq-win-db-key/issues/58)。NTQQ 的 1024 字节文件头使物理 1 GiB 对应的 SQLite 逻辑位置提前了 1024 字节。部分数据库在此位置保留页，与标准 SQLite 的逻辑 1 GiB 保留页相差一页（4096 字节页大小），因此超过该边界后可能报数据库损坏。
+
+遇到此问题时，可给 `export` 或 `serve` 添加实验性参数 `--pending-byte-offset=-1024`，将源库的保留页位置提前 1024 字节以匹配其布局。默认不启用；导出的明文库仍使用标准 SQLite 布局。
+
 ## 作为 Rust crate 使用
 
 ![docs.rs](https://img.shields.io/docsrs/ntdb_unwrap)
